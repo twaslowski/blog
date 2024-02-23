@@ -47,9 +47,9 @@ jobs:
 
       - name: Build site
         run: |
-          - bundle exec jekyll b -d "_site${{ steps.pages.outputs.base_path }}"
-          - bundle exec jekyll s &
-          - sleep 2
+          bundle exec jekyll b -d "_site${{ steps.pages.outputs.base_path }}"
+          bundle exec jekyll s &
+          sleep 2
         env:
           JEKYLL_ENV: "production"
 
