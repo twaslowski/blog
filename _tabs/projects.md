@@ -8,7 +8,7 @@ All of them stem from my personal interests and needs – I don't write anything
 
 ## lingolift ([source](https://github.com/twaslowski/lingolift))
 
-[Hosted on Streamlit Cloud](https://lingolift.streamlit.app).
+[Check it out on Streamlit Cloud](https://lingolift.streamlit.app), or [chat with the bot on Telegram](https://t.me/lingolift_bot).
 
 I initially developed this as a Telegram bot to support me in learning Russian.
 
