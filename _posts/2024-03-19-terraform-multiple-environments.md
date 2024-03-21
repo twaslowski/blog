@@ -26,7 +26,8 @@ but then you're looking at a lot of extra effort.
 Essentially, I would only recommend using this pattern in relatively simple projects where you don't want to go
 through the trouble of getting an extra account from your Cloud provider and security is not a priority.
 What I'm suggesting here is not best practice, but it is extremely convenient and may be right for a prototype
-or an MVP.
+or an MVP. For a more comprehensive overview on the advantages on using multiple accounts, check out
+[this AWS documentation page](https://docs.aws.amazon.com/whitepapers/latest/organizing-your-aws-environment/benefits-of-using-multiple-aws-accounts.html)
 
 ### Getting Started
 
