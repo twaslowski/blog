@@ -96,14 +96,53 @@ def my_function(my_dependency: MyDependency):
 ```
 
 Essentially, `py-autowire` matches the name of the argument in the function with the parameters in the `@autowire`
-decorator. It will only inject objects that inherit from the `Injectable` class. If an object is not present in the
+decorator. It will only inject objects that inherit from the `Injectable` class. 
+The matching process works primarily by retrieving the fully qualified class name of the argument and comparing it
+to the names of the registered dependencies. This is a simple and effective approach that works well for small projects.
+If an object is not present in the
 dependency injection container or the argument to the decorator is not found in the method signature, corresponding
 exceptions will be raised. This ensures relative robustness while maintaining flexibility and simplicity.
 
+However, fully qualified names may not cover all use cases. For example, this breaks down when you use subclasses:
+
+```python
+from pyautowire import Injectable
+from abc import ABC
+
+
+class UserRepository(ABC, Injectable):
+  pass
+
+
+class UserRepositoryImpl1(UserRepository):
+  def __init__(self):
+    self.register(alias="user_repository")
+
+
+class UserRepositoryImpl2(UserRepository):
+  def __init__(self):
+    self.register(alias="user_repository")
+
+@autowire("user_repository")
+def create_user(user_repository: UserRepository):
+  pass
+```
+
+You can see that matching by fully qualified name does not work here, because the fully qualified name of
+the UserRepository varies from the fully qualified name of the UserRepositoryImpl1 and UserRepositoryImpl2 classes.
+Aliasing them to the same name in the `register` function solves this problem.
+
+## Testing
+
 ## Caveats
 
-Of course, this approach is 
+Of course, this approach to autowiring is _wildly_ hacky. It allows you to neglect healthy package structures and even
+use circular class dependencies that you could not use with `import` statements. It is not tested for high performance
+and multithreading. You should not use it in a codebase that has to scale to high degrees of complexity.
+
+If you have any needs beyond the simplest forms of dependency injection, you should look into the more powerful
+libraries mentioned above. However, I believe that for smaller projects, this approach might just be Good Enough. 
 
 ## So ... Should I use it?
 
-It depends!
+It depends! Do you have a small project that you want to get off the ground quickly?

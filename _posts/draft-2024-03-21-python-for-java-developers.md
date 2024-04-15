@@ -72,4 +72,12 @@ def get_username(id: int) -> str:
 
 ## Testing
 
+tl;dr: Use `pytest`.
+
+`pytest` is a powerful test suite
+
 ## Dependency Management
+
+tl;dr: Use `poetry`.
+
+Poetry is a Python dependency management tool that is similar to Java's Maven or Gradle.
