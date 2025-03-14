@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Good Enough Dependency Injection in Python"
+title: "Building your own Dependency Injection Container in Python"
 ---
 
 ## Introduction
@@ -145,4 +145,4 @@ libraries mentioned above. However, I believe that for smaller projects, this ap
 
 ## So ... Should I use it?
 
-It depends! Do you have a small project that you want to get off the ground quickly?
+It depends! Do you have a small project that you want to get off the ground quickly? Absolutely!

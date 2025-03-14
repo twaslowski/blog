@@ -4,7 +4,7 @@ run:
 	@bundle exec jekyll s
 
 build:
-	@bundle exec jekyll b -d _site/blog
+	@bundle exec jekyll b -d _site
 
 test:
 	@bundle exec htmlproofer "_site" \

@@ -6,22 +6,34 @@ order: 1
 Here is where you can see some of the projects that I work on in my own time.
 All of them stem from my personal interests and needs – I don't write anything I don't personally use.
 
-## lingolift ([source](https://github.com/twaslowski/lingolift))
+## [grammr](https://grammr.twaslowski.com/)
 
-[Check it out on Streamlit Cloud](https://lingolift.streamlit.app), or [chat with the bot on Telegram](https://t.me/lingolift_bot).
+📖 A personal glossary and language learning tool that supports multiple languages. 
 
-I initially developed this as a Telegram bot to support me in learning Russian.
+- 🌏 Translate texts
+- 🔎 Get word-for-word translations and grammatical analyses.
+- 💡Conjugate and decline words. 
+- 📚 Create flashcards and export them to Anki for studying
 
-Essentially, it translates sentences from foreign languages into English while providing grammatical explanations. 
-It's supposed to give you a deeper understanding into **why** sentences are formed in a certain way.
+Grammr is a passion project of mine, initially developed to help me learn Russian.
 
-It now features inflection tables for German, supporting the declension and conjucation of words, although this is
-still very limited and error-prone. I'm achieving inflection by fine-tuning gpt-3.5 on an annotated corpus of
-German words. This is a prototype so far, I have yet to perform serious benchmarking.
+Initially developed as [lingolift](https://github.com/twaslowski/lingolift-core), I have
+since rewritten it and given it a proper frontend written in NextJS.
 
-## Telegram Mood Tracker ([source](https://github.com/twaslowski/telegram-mood-tracker)) 
+Grammr was written to scale and support an arbitrary amount of languages. It has a proper
+microservice architecture and can be deployed to a Kubernetes cluster with Helm charts.
+You can check out its source code [here](https://github.com/twaslowski/grammr).
 
-Available as a public Telegram bot. [Chat with it](https://t.me/bipolar_mood_tracker_bot)!
+## [the telegram mood tracker](https://t.me/open_mood_tracker_bot)
 
-A Telegram-based bot that can query, store and visualise a wide range of personalisable mental health metrics. 
-Includes customisable reminders. Built to make tracking metrics, perhaps as a component of therapy, as easy as possible.
+A Telegram bot that helps you develop emotional intelligence by developing metrics
+around your mental health and track them.
+
+- 🫥 Specify baselines for your mood and track deviations
+- 📈 Graph those deviations over time, correlating different factors
+
+I decided to prioritize the development of grammr, so this bot is currently kind of stuck in development hell.
+Enabling users to supply their own metrics turned out to be pretty difficult, because handling complex user
+dialogs in Telegram can be a pain. I might pick this up when I have the motivation to do so.
+
+If you're curious, you can still [check it out on Github](https://github.com/twaslowski/open-mood-tracker).
