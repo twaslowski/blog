@@ -9,17 +9,18 @@ to explain why and show you a better way. If your Terraform folders are laid out
 ```
 terraform/
 ├── dev/
-│   ├── main.tf
+│   ├── provider.tf
 │   ├── variables.tf
 ├── prod/
-│   ├── main.tf
+│   ├── provider.tf
 │   ├── variables.tf
 │   modules/
 │   ├── env/
-│   │   ├── secrets.tf
-│   │   ├── queues.tf
-│   │   ├── networking.tf
-│   │   ├── {...}.tf
+│   │   ├── certificate.tf
+│   │   ├── domain.tf
+│   │   ├── load-balancer.tf
+│   │   ├── service.tf
+...
 ```
 
 And then your `main.tf` in `dev/` and `prod/` looks something like this:
@@ -42,11 +43,15 @@ in one environment and forget to propagate them to the other. This can lead to s
 `dev` environment is running a different version of your infrastructure than `prod`, which can lead
 to unexpected behavior when you finally deploy to production.
 
-Also, if you actually _do_ keep them in sync, that means that you have to exactly replicate every change
-twice, which violates the DRY (Don't Repeat Yourself) principle. This can lead to a lot of duplicated code
+Alternatively, if you actually _do_ keep them in sync, that means that you have to exactly replicate every change
+twice, which violates the DRY (Don't Repeat Yourself) principle. This leads to a lot of duplicated code
 and makes it harder to maintain your infrastructure.
 
 ## What you should do instead
+
+There are a plethora of solutions for this problem. Some people use Terragrunt, others use Terraform Cloud,
+and some use workspaces. However, if you do not want to use any additional tooling, there is a "vanilla" Terraform
+solution that works quite well.
 
 I recommend the following structure:
 
@@ -57,11 +62,11 @@ terraform/
 │   ├── prod.hcl
 │   ├── dev.tfvars
 │   ├── prod.tfvars
-├── main.tf
-├── networking.tf
-├── queues.tf
-├── secrets.tf
-├── variables.tf
+├── certificate.tf
+├── domain.tf
+├── load-balancer.tf
+├── provider.tf
+├── service.tf
 ```
 
 Your `dev.hcl` and `prod.hcl` files should contain the backend configuration. For example:
@@ -101,4 +106,5 @@ to do more harm than good in the long run.
 Of course, all of this should be taken with a grain of salt. This article is a result of my personal
 experience, and your project may have specific requirements that make a different approach more suitable.
 I won't advocate against approaches using workspaces, Terragrunt, Terraform Cloud or the variety of tools
-that exist in the Terraform e
+that exist in the Terraform ecosystem; however, if you want to stick to vanilla Terraform, I hope this article
+has provided you with some food for thought.
