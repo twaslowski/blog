@@ -28,7 +28,7 @@ So I figured that really, a blog just consists of some HTML and the images. I ha
 static site generators like Jekyll (which is powering this blog), and I was already backing up my images
 to Backblaze B2, so I started thinking ... how difficult could it be to build my own blog?
 
-## The building blocks
+## Building Blocks
 
 Jekyll is kind of limited in what I can do, so I started searching for other static site generators and came
 across [Hugo](https://gohugo.io/). Hugo also seems popular for documentation, which got me thinking that learning
@@ -39,10 +39,15 @@ at my twaslowski.com domain. And it turns out that Backblaze B2 and Cloudflare h
 [partnership](https://www.backblaze.com/docs/cloud-storage-deliver-public-backblaze-b2-content-through-cloudflare-cdn)
 so that egress is free. Easy!
 
-## The infrastructure
+## The Infrastructure
 
 I'm a DevOps engineer by trade, so my first action item was setting up Terraform and opening up the docs for
 the Cloudflare and B2 providers. This turned out to be easy.
+
+### Setting up Storage
+
+I already had B2 set up to back up my RAW files. I had `rclone` configured, so all I needed was a new, public
+bucket with reasonable CORS configuration.
 
 ```hcl
 resource "b2_bucket" "photos" {
@@ -61,7 +66,7 @@ resource "b2_bucket" "photos" {
 }
 ```
 
-Setting up DNS is equally easy.
+### Setting up DNS
 
 ```hcl
 resource "cloudflare_dns_record" "pages" {
@@ -90,6 +95,50 @@ resource "cloudflare_dns_record" "images" {
 Note the `comment` field. Always tag your cloud resources, kids! Also, of course the subdomains are parameterized.
 This is just for the sake of illustration. And that's the essential infra!
 
+### Transform Rule
+
+You also should set up a Cloudflare transform rule. Everything _works_ without a transform rule,
+but this allows bad actors to serve untrusted content through your domain. Consider this URL structure:
+`https://img.twaslowski.com/photos-web-prod/portugal/hike-1.avif`.
+
+Do you see the problem? A bad actor could create a bucket called `photos-web-staging` and serve arbitrary files
+under my subdomain if I'm not careful! Something like
+`https://img.twaslowski.com/photos-web-staging/portugal/hike-1.avif` could resolve to a malicious file.
+
+Therefore, we have to set up a transform rule to ensure that all calls to `img.twaslowski.com` automatically
+resolve to the bucket I control.
+
+```hcl
+resource "cloudflare_ruleset" "bucket_rewrite" {
+  name        = "b2-bucket-object-rewrite"
+  description = "Rewrite bucket name in request URL for Backblaze B2 bucket access"
+
+  zone_id = var.cloudflare_zone_id
+  phase   = "http_request_transform"
+  kind    = "zone"
+
+  rules = [
+    {
+      description = "Rewrite bucket name in request URL for Backblaze B2 bucket access"
+      enabled     = true
+      expression  = "(http.request.full_uri wildcard r\"https://img.twaslowski.com/file/*\")"
+
+      action = "rewrite"
+      action_parameters = {
+        uri = {
+          path = {
+            expression = "wildcard_replace(http.request.uri.path, r\"/file/*\", r\"/file/${var.b2_bucket_name}/$${1}\")"
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+Now I can serve all my contents at `img.twaslowski.com/file/*`, and Cloudflare will inject the correct bucket name
+via a transform. No more malicious URL injections!
+
 ## Setting up the blog
 
 I would just like to say: Hugo is very powerful. It mixes HTML + CSS, JS and the Go template language.
@@ -101,8 +150,10 @@ I've coded a few projects with NextJS and have kind of grown to like TypeScript.
 on this stack and hosting it on Vercel, but I felt like doing something simple for once. Honestly, most of what is about
 to follow is arguably on me. Let me show you something:
 
-````html
 {% raw %}
+
+````html
+
 <div class="carousel-track" style="position:relative; width:100%;">
     {{ range $i, $img := $images }}
     <div class="carousel-slide" data-index="{{ $i }}"
@@ -117,9 +168,43 @@ to follow is arguably on me. Let me show you something:
     </div>
     {{ end }}
 </div>
-{% endraw %}
 ````
+
+{% endraw %}
 
 ![Ouch.](../assets/posts/photography-blog/willem-dafoe.png)
 
-If you did not read that in its entirely, I don't blame you.
+If you did not read that in its entirely, I don't blame you. Mixing the Go templating language and HTML
+is the most [blursed](https://www.urbandictionary.com/define.php?term=Blursed) thing I've seen in a while.
+It is incredibly powerful, but I've seen some truly unspeakable things.
+
+The above is the implementation of a carousel, where you can cycle through a selection of images.
+It is invoked as follows:
+
+{% raw %}
+
+````html
+{{< carousel
+images="portugal/pt-6.avif,portugal/pt-9.avif,portugal/pt-12.avif,portugal/pt-15.avif,portugal/pt-14.avif"
+alt="Hiking in portugal is nice"
+>}}
+````
+
+{% endraw %}
+
+That results in the following:
+
+![A sample carousel](../assets/posts/photography-blog/carousel.png)
+
+With extensive help of LLMs (obviously, what sane person what write this stuff on their own?) I managed
+to get a healthy selection of macros ([shortcodes](https://gohugo.io/templates/types/#shortcode)
+and [partials](https://gohugo.io/templates/types/#partial), in Hugo terms) that handle image loading and displaying with
+a healthy bit of optimization.
+
+## Optimizations
+
+There are a few things that need to be done in order to make the website more secure and ensure a snappy UX.
+
+### Resizing
+
+### Caching
