@@ -3,7 +3,7 @@ layout: post
 title: "I built a photography blog with GitHub Actions, Backblaze B2 and Cloudflare"
 ---
 
-## Introduction
+## Preface: On my personal circumstances
 
 I recently became a digital nomad. Being a creative person, I always have to have a creative hobby.
 What exactly that is varies: Sometimes it is music, other times I code a project in my free time.
@@ -28,9 +28,12 @@ So I figured that really, a blog just consists of some HTML and the images. I ha
 static site generators like Jekyll (which is powering this blog), and I was already backing up my images
 to Backblaze B2, so I started thinking ... how difficult could it be to build my own blog?
 
-## Building Blocks
+## Building a Blog
 
-Jekyll is kind of limited in what I can do, so I started searching for other static site generators and came
+I wanted a technology that allows me to write pages in Markdown, apply a nice theme and publish the resulting
+page to GitHub Pages. I'm using Jekyll for this block, but it is somewhat limited.
+
+When I started searching for other static site generators, I came
 across [Hugo](https://gohugo.io/). Hugo also seems popular for documentation, which got me thinking that learning
 it might be a solid investment in my future – who knows, I might use it professionally one day.
 
@@ -39,12 +42,12 @@ at my twaslowski.com domain. And it turns out that Backblaze B2 and Cloudflare h
 [partnership](https://www.backblaze.com/docs/cloud-storage-deliver-public-backblaze-b2-content-through-cloudflare-cdn)
 so that egress is free. Easy!
 
-## The Infrastructure
+### The Infrastructure
 
 I'm a DevOps engineer by trade, so my first action item was setting up Terraform and opening up the docs for
 the Cloudflare and B2 providers. This turned out to be easy.
 
-### Setting up Storage
+#### Setting up Storage
 
 I already had B2 set up to back up my RAW files. I had `rclone` configured, so all I needed was a new, public
 bucket with reasonable CORS configuration.
@@ -66,7 +69,7 @@ resource "b2_bucket" "photos" {
 }
 ```
 
-### Setting up DNS
+#### Setting up DNS
 
 ```hcl
 resource "cloudflare_dns_record" "pages" {
@@ -95,33 +98,26 @@ resource "cloudflare_dns_record" "images" {
 Note the `comment` field. Always tag your cloud resources, kids! Also, of course the subdomains are parameterized.
 This is just for the sake of illustration. And that's the essential infra!
 
-### Transform Rule
+#### Transform Rule
 
 You also should set up a Cloudflare transform rule. Everything _works_ without a transform rule,
 but this allows bad actors to serve untrusted content through your domain. Consider this URL structure:
 `https://img.twaslowski.com/photos-web-prod/portugal/hike-1.avif`.
 
-Do you see the problem? A bad actor could create a bucket called `photos-web-staging` and serve arbitrary files
+Do you see the problem? A bad actor could create a bucket called `bad-photos` and serve arbitrary files
 under my subdomain if I'm not careful! Something like
-`https://img.twaslowski.com/photos-web-staging/portugal/hike-1.avif` could resolve to a malicious file.
+`https://img.twaslowski.com/bad-photos/a-very-pad-photo.jpg` could now easily resolve to a malicious file.
 
 Therefore, we have to set up a transform rule to ensure that all calls to `img.twaslowski.com` automatically
 resolve to the bucket I control.
 
 ```hcl
 resource "cloudflare_ruleset" "bucket_rewrite" {
-  name        = "b2-bucket-object-rewrite"
-  description = "Rewrite bucket name in request URL for Backblaze B2 bucket access"
-
-  zone_id = var.cloudflare_zone_id
-  phase   = "http_request_transform"
-  kind    = "zone"
+  phase = "http_request_transform"
 
   rules = [
     {
-      description = "Rewrite bucket name in request URL for Backblaze B2 bucket access"
-      enabled     = true
-      expression  = "(http.request.full_uri wildcard r\"https://img.twaslowski.com/file/*\")"
+      expression = "(http.request.full_uri wildcard r\"https://img.twaslowski.com/file/*\")"
 
       action = "rewrite"
       action_parameters = {
@@ -136,19 +132,61 @@ resource "cloudflare_ruleset" "bucket_rewrite" {
 }
 ```
 
-Now I can serve all my contents at `img.twaslowski.com/file/*`, and Cloudflare will inject the correct bucket name
-via a transform. No more malicious URL injections!
+Now, a URL like `https://img.twaslowski.com/file/portugal/pt-12.avif` internally gets rewritten
+to the bucket of my choosing. No more bucket injection!
 
-## Setting up the blog
+#### Caching
 
-I would just like to say: Hugo is very powerful. It mixes HTML + CSS, JS and the Go template language.
+I use Cloudflare to aggressively cache images at the edge. All content served from `img.twaslowski.com` is cached for a
+month, given that the status code of the initial request is 200.
+
+```hcl
+resource "cloudflare_ruleset" "cache_images" {
+  phase = "http_request_cache_settings"
+
+  rules = [
+    {
+      expression = "(http.host eq \"img.twaslowski.com\")"
+      action     = "set_cache_settings"
+
+      action_parameters = {
+        edge_ttl = {
+          mode    = "override_origin"
+          default = 7 * 24 * 3600
+
+          status_code_ttl = [
+            {
+              status_code = 200
+              value       = 7 * 24 * 3600
+            },
+            {
+              status_code = 404
+              value       = 0
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+Specifying status codes is important here! I initially misconfigured this and cached some 404s.
+I had a very bad time debugging this and ultimately had to clear my cache via the Cloudflare REST API.
+That's two hours of my life I'm not getting back.
+
+### Static Site Generation
+
+I would just like to say: Hugo is **very powerful**. It mixes HTML + CSS, JS and the Go template language.
 The Go template language is a different beast entirely that I have strong opinions on which I won't get into today.
 If you're interested in more reading, I recommend this brilliant article:
 [Every Simple Language Will Eventually End Up Turing Complete](https://solutionspace.blog/2021/12/04/every-simple-language-will-eventually-end-up-turing-complete/).
 
 I've coded a few projects with NextJS and have kind of grown to like TypeScript. I was considering building a project
-on this stack and hosting it on Vercel, but I felt like doing something simple for once. Honestly, most of what is about
-to follow is arguably on me. Let me show you something:
+on this stack and hosting it on Vercel, but I felt like doing something simple for once.
+
+But then I tried doing some more powerful things, like implementing a carousel. What is about to follow is
+purely my fault. Brace yourself.
 
 {% raw %}
 
@@ -199,12 +237,21 @@ That results in the following:
 With extensive help of LLMs (obviously, what sane person what write this stuff on their own?) I managed
 to get a healthy selection of macros ([shortcodes](https://gohugo.io/templates/types/#shortcode)
 and [partials](https://gohugo.io/templates/types/#partial), in Hugo terms) that handle image loading and displaying with
-a healthy bit of optimization.
+a healthy bit of optimization. They are easy enough to use that dealing with their maintenance every
+once in a while is not so bad.
 
-## Optimizations
+## Wrapping up
 
-There are a few things that need to be done in order to make the website more secure and ensure a snappy UX.
+This is honestly a super fun project that I've enjoyed working on a lot. There's a bunch of stuff I haven't even
+gotten into yet:
 
-### Resizing
+- There is a custom theme, which you can find at [twaslowski/newsroom](https://github.com/twaslowski/newsroom). Instead
+  of the plain old black and white, the light mode theme is based on Solarized and the dark mode theme on Gruvbox.
+- Also, the shortcodes and partial system is quite powerful, and I really enjoy working with it, despite my complaints
+  about the syntax above. I have abstracted away a lot and encapsulated a bunch of small performance hacks, like using
+  `srcset`, that make it very easy to work on the website.
+- There is a bunch of tooling around resizing and uploading images. For example, there is a `resize` command that
+  generates resized images using [ImageMagick](https://imagemagick.org) and a `sync` command that syncs my images
+  directory to B2 using [rclone](https://rclone.org/). Good tooling is important!
 
-### Caching
+I believe that's it. 
