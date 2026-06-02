@@ -31,7 +31,7 @@ to Backblaze B2, so I started thinking ... how difficult could it be to build my
 ## Building a Blog
 
 I wanted a technology that allows me to write pages in Markdown, apply a nice theme and publish the resulting
-page to GitHub Pages. I'm using Jekyll for this block, but it is somewhat limited.
+page to GitHub Pages. I'm using Jekyll for this blog, but it is somewhat limited.
 
 When I started searching for other static site generators, I came
 across [Hugo](https://gohugo.io/). Hugo also seems popular for documentation, which got me thinking that learning
@@ -40,7 +40,9 @@ it might be a solid investment in my future – who knows, I might use it profes
 So I'm using Hugo to generate HTML. I can host this HTML on GitHub Pages with ease. I can set up DNS on Cloudflare
 at my twaslowski.com domain. And it turns out that Backblaze B2 and Cloudflare have a
 [partnership](https://www.backblaze.com/docs/cloud-storage-deliver-public-backblaze-b2-content-through-cloudflare-cdn)
-so that egress is free. Easy!
+so that egress is free.
+
+![Oh yeah, it's all coming together.](../assets/posts/photography-blog/all-coming-together.jpg)
 
 ### The Infrastructure
 
@@ -70,6 +72,9 @@ resource "b2_bucket" "photos" {
 ```
 
 #### Setting up DNS
+
+We'll need two different records: One to serve the actual blog, which will be hosted at `photography.twaslowski.com`,
+and then another one for all the CDN tasks (at `img.twaslowski.com`). Here's the code:
 
 ```hcl
 resource "cloudflare_dns_record" "pages" {
@@ -104,12 +109,19 @@ You also should set up a Cloudflare transform rule. Everything _works_ without a
 but this allows bad actors to serve untrusted content through your domain. Consider this URL structure:
 `https://img.twaslowski.com/photos-web-prod/portugal/hike-1.avif`.
 
+It just consists of my CDN subdomain (`img.twaslowski.com`), the bucket name (`photos-web-prod`) and then a file path.
+
 Do you see the problem? A bad actor could create a bucket called `bad-photos` and serve arbitrary files
 under my subdomain if I'm not careful! Something like
-`https://img.twaslowski.com/bad-photos/a-very-pad-photo.jpg` could now easily resolve to a malicious file.
+`https://img.twaslowski.com/bad-photos/a-very-pad-photo.jpg` could now easily resolve to a malicious file
+in a bucket I do not control.
 
-Therefore, we have to set up a transform rule to ensure that all calls to `img.twaslowski.com` automatically
-resolve to the bucket I control.
+The folks at Backblaze have documented this problem and the solution very well, and you can find that article
+[here](https://www.backblaze.com/docs/cloud-storage-deliver-public-backblaze-b2-content-through-cloudflare-cdn#configure-a-transform-rule)
+if you're interested.
+
+Essentially, to remediate this problem we'll have to set up a transform rule to ensure that all calls to
+`img.twaslowski.com` automatically resolve to the bucket I control.
 
 ```hcl
 resource "cloudflare_ruleset" "bucket_rewrite" {
