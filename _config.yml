@@ -11,13 +11,10 @@ timezone: "Europe/Berlin"
 # ↓ --------------------------
 
 title: Tobias Waslowski
-
 tagline: Software engineering and stuff
-
-description: >-
-  A blog about software engineering, programming, and related topics.
-
 url: "https://twaslowski.com"
+
+description: A blog about software engineering, programming, and related topics.
 
 github:
   username: twaslowski
@@ -29,28 +26,11 @@ social:
     - https://github.com/twaslowski
     - https://www.linkedin.com/in/twaslowski
 
-google_site_verification: # fill in to your verification string
+analytics:
+  umami:
+    id: "278a4ad9-1ebb-4783-92b7-012660df68c0"
+    domain: "https://tracking.twaslowski.com"
 
-# ↑ --------------------------
-# The end of `jekyll-seo-tag` settings
-
-google_analytics:
-  id: # fill in your Google Analytics ID
-
-goatcounter:
-  id: # fill in your Goatcounter ID
-
-# Prefer color scheme setting.
-#
-# Note: Keep empty will follow the system prefer color by default,
-# and there will be a toggle to switch the theme between dark and light
-# on the bottom left of the sidebar.
-#
-# Available options:
-#
-#     light  - Use the light color scheme
-#     dark   - Use the dark color scheme
-#
 theme_mode: # [light | dark]
 
 # The CDN endpoint for images.
@@ -106,7 +86,7 @@ pwa:
     # Usually its value is the `baseurl` of another website that
     # shares the same domain name as the current website.
     deny_paths:
-      # - "/example"  # URLs match `<SITE_URL>/example/*` will not be cached by the PWA
+    # - "/example"  # URLs match `<SITE_URL>/example/*` will not be cached by the PWA
 
 paginate: 10
 
@@ -166,7 +146,7 @@ compress_html:
   profile: false
   blanklines: false
   ignore:
-    envs: [development]
+    envs: [ development ]
 
 exclude:
   - "*.gem"
@@ -179,7 +159,7 @@ exclude:
   - package*.json
 
 jekyll-archives:
-  enabled: [categories, tags]
+  enabled: [ categories, tags ]
   layouts:
     category: category
     tag: tag
