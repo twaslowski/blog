@@ -2,8 +2,7 @@ version: '3'
 tasks:
   run:
     desc: Run blog locally
-    cmds:
-      - bundle exec jekyll s
+    cmd: ./tools/run.sh
 
   build:
     desc: Build blog
@@ -12,8 +11,4 @@ tasks:
 
   test:
     desc: Run tests
-    cmds:
-      - |
-        bundle exec htmlproofer "_site" \
-          --disable-external=true \
-          --ignore-urls "/^http:\/\/127.0.0.1/,/^http:\/\/0.0.0.0/,/^http:\/\/localhost/"
+    cmd: ./tools/test.sh
