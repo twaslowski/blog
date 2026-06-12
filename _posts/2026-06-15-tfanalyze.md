@@ -3,10 +3,6 @@ layout: post
 title: "tfanalyze"
 ---
 
-> Disclaimer: This post is about Terraform, because that is what I work with. I am relatively certain it applies
-> to OpenTofu as well. If somebody wants to try out `tfanalyze` against an OpenTofu project, feel free and let me
-> know how it goes!
-
 I work on relatively large Terraform states. Some of those Terraform states hold a lot of resources that can handle
 deletion when something goes wrong – most don't.
 
@@ -14,7 +10,13 @@ Sometimes I'll have a changeset that produces big Terraform plans. Going through
 and 10 deletions, when some of those resources are mission-critical databases, can be somewhat anxiety-inducing.
 
 To get a better overview over what resources are being changed, I wrote `tfanalyze`. It's a very minimal Python script
-that parses your Terraform plans and gives you a summary. That will look something like this:
+that parses your Terraform plans and gives you a summary.
+
+> Disclaimer: This post is about Terraform, because that is what I work with. I am relatively certain it applies
+> to OpenTofu as well. If somebody wants to try out `tfanalyze` against an OpenTofu project, feel free and let me
+> know how it goes!
+
+A typical usage of `tfanalyze` looks something like this:
 
 ```shell
 $ terraform plan -out plan.tfplan
